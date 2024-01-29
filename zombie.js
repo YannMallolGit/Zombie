@@ -24,6 +24,14 @@ class Person {
     this.cercleSocialDescendant = [];
     this.cercleSocialAscendant = []
     this.vaccinsImunisedVaraint = []
+    this.memoizationCache = {};
+  }
+
+  memoize(key, computeFunction) {
+    if (!(key in this.memoizationCache)) {
+      this.memoizationCache[key] = computeFunction();
+    }
+    return this.memoizationCache[key];
   }
 
   addRelationDescendente(person) {
@@ -32,71 +40,81 @@ class Person {
   }
 
   infectionZombie32() {
-    if (this.isAlive && this.infectionStatus === InfectionStatus.HEALTHY) {
-      this.infectionStatus = InfectionStatus.INFECTED;
-      this.infectionType = InfectionVariant.ZOMBIE_32
-      for (const person of this.cercleSocialDescendant) {
-        if (person.infectionStatus === InfectionStatus.HEALTHY && person.age >= 32) {
-          person.infectionZombie32();
+    return this.memoize('infectionZombie32', () => {
+      if (this.isAlive && this.infectionStatus === InfectionStatus.HEALTHY) {
+        this.infectionStatus = InfectionStatus.INFECTED;
+        this.infectionType = InfectionVariant.ZOMBIE_32
+        for (const person of this.cercleSocialDescendant) {
+          if (person.infectionStatus === InfectionStatus.HEALTHY && person.age >= 32) {
+            person.infectionZombie32();
+          }
         }
-      }
 
-      for (const person of this.cercleSocialAscendant) {
-        if (person.infectionStatus === InfectionStatus.HEALTHY && person.age >= 32) {
-          person.infectionZombie32();
+        for (const person of this.cercleSocialAscendant) {
+          if (person.infectionStatus === InfectionStatus.HEALTHY && person.age >= 32) {
+            person.infectionZombie32();
+          }
         }
       }
-    }
+    });
   }
 
   infectionZombieA(){
-    if (this.isAlive && this.infectionStatus === InfectionStatus.HEALTHY) {
-      this.infectionStatus = InfectionStatus.INFECTED;
-      this.infectionType = InfectionVariant.ZOMBIE_A
-      for (const person of this.cercleSocialDescendant) {
-        person.infectionZombieA();
+    return this.memoize('infectionZombieA', () => {
+      if (this.isAlive && this.infectionStatus === InfectionStatus.HEALTHY) {
+        this.infectionStatus = InfectionStatus.INFECTED;
+        this.infectionType = InfectionVariant.ZOMBIE_A
+        for (const person of this.cercleSocialDescendant) {
+          person.infectionZombieA();
+        }
       }
-    }
+    });
   }
 
   infectionZombieB(){
-    if (this.isAlive && this.infectionStatus === InfectionStatus.HEALTHY) {
-      this.infectionStatus = InfectionStatus.INFECTED;
-      this.infectionType = InfectionVariant.ZOMBIE_B;
-      for (const person of this.cercleSocialAscendant) {
-        person.infectionZombieB();
+    return this.memoize('infectionZombieB', () => {
+      if (this.isAlive && this.infectionStatus === InfectionStatus.HEALTHY) {
+        this.infectionStatus = InfectionStatus.INFECTED;
+        this.infectionType = InfectionVariant.ZOMBIE_B;
+        for (const person of this.cercleSocialAscendant) {
+          person.infectionZombieB();
+        }
       }
-    }
+    });
   }
 
   infectionZombieC(){
-    if (this.isAlive && this.infectionStatus === InfectionStatus.HEALTHY) {
-      this.infectionStatus = InfectionStatus.INFECTED;
-      this.infectionType = InfectionVariant.ZOMBIE_C;
-      const relationCercle = this.cercleSocialDescendant.concat(this.cercleSocialAscendant);
-      for (let i = 0; i < relationCercle.length; i++) {
-        if(i % 2 == 0 ){
-          if (relationCercle[i].infectionStatus === InfectionStatus.HEALTHY) {
-            relationCercle[i].infectionStatus = InfectionStatus.INFECTED;
-            relationCercle[i].infectionType = this.infectionType;
+    return this.memoize('infectionZombieC', () => {
+      if (this.isAlive && this.infectionStatus === InfectionStatus.HEALTHY) {
+        this.infectionStatus = InfectionStatus.INFECTED;
+        this.infectionType = InfectionVariant.ZOMBIE_C;
+        const relationCercle = this.cercleSocialDescendant.concat(this.cercleSocialAscendant);
+        for (let i = 0; i < relationCercle.length; i++) {
+          if(i % 2 == 0 ){
+            if (relationCercle[i].infectionStatus === InfectionStatus.HEALTHY) {
+              relationCercle[i].infectionStatus = InfectionStatus.INFECTED;
+              relationCercle[i].infectionType = this.infectionType;
+            }
           }
+          
         }
-        
       }
-    }
+    });
   }
   
   sprendInfectionZombieUltime(){
-    if(this.isAlive){
-      if (this.cercleSocialAscendant.length) {
-        for (const person of this.cercleSocialAscendant) {
-          person.sprendInfectionZombieUltime()
+      return this.memoize('sprendInfectionZombieUltime', () => {    
+      if(this.isAlive){
+        if (this.cercleSocialAscendant.length) {
+          for (const person of this.cercleSocialAscendant) {
+            person.sprendInfectionZombieUltime()
+          }
+        }else{
+          this.infectionStatus = InfectionStatus.INFECTED;
+          this.infectionType = InfectionVariant.ZOMBIE_ULTIME;
         }
-      }else{
-        this.infectionStatus = InfectionStatus.INFECTED;
-        this.infectionType = InfectionVariant.ZOMBIE_ULTIME;
       }
-    }
+    });
   }
 
   isImuneTo(infectionZombie){
@@ -107,36 +125,42 @@ class Person {
     return this.vaccinsImunisedVaraint.length ? this.vaccinsImunisedVaraint.toString(): "Aucune immunité";
   }
   vaccinateForZombieAand32(){
-    if(!this.isImuneTo(InfectionVariant.ZOMBIE_A)){
-      if(this.infectionStatus == InfectionStatus.INFECTED && (this.infectionType == InfectionVariant.ZOMBIE_A
-         ||  this.infectionType == InfectionVariant.ZOMBIE_32) && this.age <= 30){
-          this.infectionType = null;
-          this.infectionStatus = InfectionStatus.HEALTHY;
+     return this.memoize('vaccinateForZombieAand32', () => {
+      if(!this.isImuneTo(InfectionVariant.ZOMBIE_A)){
+        if(this.infectionStatus == InfectionStatus.INFECTED && (this.infectionType == InfectionVariant.ZOMBIE_A
+          ||  this.infectionType == InfectionVariant.ZOMBIE_32) && this.age <= 30){
+            this.infectionType = null;
+            this.infectionStatus = InfectionStatus.HEALTHY;
+        }
+        if(this.infectionStatus == InfectionStatus.HEALTHY && this.age <= 30){
+          this.vaccinsImunisedVaraint.push(InfectionVariant.ZOMBIE_A);
+          this.vaccinsImunisedVaraint.push(InfectionVariant.ZOMBIE_32);
+        }
       }
-      if(this.infectionStatus == InfectionStatus.HEALTHY && this.age <= 30){
-        this.vaccinsImunisedVaraint.push(InfectionVariant.ZOMBIE_A);
-        this.vaccinsImunisedVaraint.push(InfectionVariant.ZOMBIE_32);
-      }
-    }
+    });
   }
 
   vaccinateForZombieBandC(index){
-    if(index % 2 != 0){
-      this.isAlive = false;
-    }else if(this.infectionType == InfectionVariant.ZOMBIE_B ||  this.infectionType == InfectionVariant.ZOMBIE_C){
-      this.infectionType = null;
-      this.infectionStatus = InfectionStatus.HEALTHY;
-    }
+    return this.memoize('vaccinateForZombieBandC', () => {
+      if(index % 2 != 0){
+        this.isAlive = false;
+      }else if(this.infectionType == InfectionVariant.ZOMBIE_B ||  this.infectionType == InfectionVariant.ZOMBIE_C){
+        this.infectionType = null;
+        this.infectionStatus = InfectionStatus.HEALTHY;
+      }
+    });
   }
 
   vaccinUltimeZombieUltime(){
-    if(!this.isImuneTo(InfectionVariant.ZOMBIE_ULTIME)){
-      if(this.infectionStatus == InfectionStatus.INFECTED && this.infectionType == InfectionVariant.ZOMBIE_ULTIME){
-          this.infectionType = null;
-          this.infectionStatus = InfectionStatus.HEALTHY;
+    return this.memoize('vaccinUltimeZombieUltime', () => {
+      if(!this.isImuneTo(InfectionVariant.ZOMBIE_ULTIME)){
+        if(this.infectionStatus == InfectionStatus.INFECTED && this.infectionType == InfectionVariant.ZOMBIE_ULTIME){
+            this.infectionType = null;
+            this.infectionStatus = InfectionStatus.HEALTHY;
+        }
+        this.vaccinsImunisedVaraint.push(InfectionVariant.ZOMBIE_ULTIME);
       }
-      this.vaccinsImunisedVaraint.push(InfectionVariant.ZOMBIE_ULTIME);
-    }
+    });
   }  
 }
 
@@ -149,7 +173,7 @@ function printTree(person, depth = 0) {
   }
 }
   
-const person1 = new Person("Athos", 25);
+const person1 = new Person("Athos", 35);
 const person2 = new Person("Porthos ", 30);
 const person3 = new Person("Aramis", 22);
 const person4 = new Person("d'Artagnan", 47);
@@ -165,10 +189,10 @@ person2.addRelationDescendente(person4);
 person3.addRelationDescendente(person4);
 person3.addRelationDescendente(person5);
 
-person3.infectionZombieA();
+//person3.infectionZombieA();
 //person3.infectionZombieB()
 //person3.infectionZombieC();
-//person3.infectionZombie32();
+person3.infectionZombie32();
 //person3.sprendInfectionZombieUltime();
 
 console.log("Arbre des relations :");
