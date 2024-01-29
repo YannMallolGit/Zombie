@@ -172,6 +172,19 @@ function printTree(person, depth = 0) {
     printTree(child, depth + 1);
   }
 }
+
+function filterPersons(people, testFunction) {
+  return people.filter(testFunction);
+}
+
+
+function displayNames(people) {
+  let names = ""
+  people.forEach((person) => {
+    names += person.name + " " ;
+  });
+  return names;
+}
   
 const person1 = new Person("Athos", 35);
 const person2 = new Person("Porthos ", 30);
@@ -209,3 +222,11 @@ for(const person of [person1, person2, person3, person4, person5, person6]){
 }
 console.log("\n\n Arbre des relations :");
 printTree(person1);
+console.log("\n\n Resultats des survivants :");
+const infectedPeople = filterPersons([person1, person2, person3, person4, person5, person6], (person) => person.infectionStatus === InfectionStatus.INFECTED);
+const deadPeople = filterPersons([person1, person2, person3, person4, person5, person6], (person) => person.isAlive === false);
+const alivePeople = filterPersons([person1, person2, person3, person4, person5, person6], (person) => person.isAlive === true);
+
+console.log("infectedPeople : ", displayNames(infectedPeople));
+console.log("deadPeople : ", displayNames(deadPeople));
+console.log("alivePeople : ", displayNames(alivePeople));
